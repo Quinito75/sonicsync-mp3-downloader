@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SonicSync · Editorial Discography Catalogue & Android MP3 Suite</title>
+  <meta name="description"
+    content="Converta vídeos e playlists do YouTube para MP3 de alta qualidade com capas e metadados ID3 otimizados para Android.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&family=Bebas+Neue&family=Anton&family=Oswald:wght@500;600;700&display=swap"
+    rel="stylesheet">
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="editorial-redesign-body">
+
+  <!-- Background Glow & Atmosphere -->
+  <div class="background-glow">
+    <div class="glow-blob blob-1"></div>
+    <div class="glow-blob blob-2"></div>
+    <div class="glow-blob blob-3"></div>
+  </div>
+
+  <!-- SECTION 1: HERO & CONVERTER SUITE -->
+  <header class="hero-section">
+    <div class="hero-container">
+      <div class="hero-brand">
+        <div class="logo">
+          <i class="fa-solid fa-compact-disc logo-icon"></i>
+          <span>SonicSync <small class="brand-tag">baixe agora</small></span>
+        </div>
+        <p class="hero-subtitle">Conversor de alta fidelidade com Metadados ID3v2.3 & Capas embutidas para Android</p>
+      </div>
+
+      <!-- Main Converter Input Card -->
+      <main class="main-card glass-panel hero-converter-card">
+        <section class="input-section">
+          <label for="youtube-url" class="input-label">
+            <i class="fa-brands fa-youtube icon-yt"></i> Link do Vídeo ou Playlist do YouTube
+          </label>
+
+          <div class="input-group">
+            <div class="input-wrapper">
+              <i class="fa-solid fa-link input-icon"></i>
+              <input type="url" id="youtube-url" placeholder="https://www.youtube.com/watch?v=... ou playlist?list=..."
+                autocomplete="off" spellcheck="false" required>
+              <button type="button" id="paste-btn" class="icon-btn" title="Colar da área de transferência">
+                <i class="fa-solid fa-paste"></i>
+              </button>
+            </div>
+            <button type="button" id="analyze-btn" class="btn btn-primary">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Analisar URL
+            </button>
+          </div>
+        </section>
+
+        <!-- Loading State -->
+        <div id="loader" class="loader-container hidden">
+          <div class="spinner"></div>
+          <p id="loader-text">Analisando link e extraindo metadados...</p>
+        </div>
+
+        <!-- Error Alert -->
+        <div id="error-alert" class="alert alert-danger hidden">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span id="error-message">Erro ao processar URL.</span>
+        </div>
+
+        <!-- Result Container -->
+        <div id="result-container" class="result-container hidden">
+
+          <!-- Single Video View -->
+          <div id="single-video-view" class="view-panel hidden">
+            <div class="media-preview-grid">
+              <div class="cover-art-box" id="cover-dropzone" title="Clique ou arraste uma imagem para trocar a capa">
+                <img id="cover-preview" src="" alt="Capa do Áudio">
+                <div class="cover-overlay">
+                  <i class="fa-solid fa-camera"></i>
+                  <span>Trocar Capa</span>
+                </div>
+                <input type="file" id="cover-file-input" accept="image/*" class="hidden">
+                <div class="badge badge-hq"><i class="fa-solid fa-shield-halved"></i> ID3v2.3 Android</div>
+              </div>
+
+              <div class="metadata-form">
+                <h3>
+                  <i class="fa-solid fa-sliders"></i> Metadados Otimizados
+                  <button type="button" id="clean-title-btn" class="btn-sm btn-ghost" title="Remover sufixos da URL">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Limpar Título
+                  </button>
+                </h3>
+
+                <div class="form-row">
+                  <div class="form-group col-full">
+                    <label for="meta-title">Título da Faixa (TIT2)</label>
+                    <input type="text" id="meta-title" placeholder="Nome da música">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group col-half">
+                    <label for="meta-artist">Artista (TPE1)</label>
+                    <input type="text" id="meta-artist" placeholder="Nome do artista/canal">
+                  </div>
+                  <div class="form-group col-half">
+                    <label for="meta-album">Álbum (TALB)</label>
+                    <input type="text" id="meta-album" placeholder="Nome do álbum">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group col-third">
+                    <label for="meta-year">Ano</label>
+                    <input type="text" id="meta-year" placeholder="2026">
+                  </div>
+                  <div class="form-group col-third">
+                    <label for="meta-track">Nº Faixa</label>
+                    <input type="text" id="meta-track" value="1/1">
+                  </div>
+                  <div class="form-group col-third">
+                    <label for="meta-bitrate">Qualidade</label>
+                    <select id="meta-bitrate">
+                      <option value="320k" selected>320 kbps (HQ)</option>
+                      <option value="256k">256 kbps</option>
+                      <option value="192k">192 kbps</option>
+                      <option value="128k">128 kbps</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="action-bar">
+                  <button type="button" id="convert-single-btn" class="btn btn-accent btn-large">
+                    <i class="fa-solid fa-download"></i> Converter & Baixar MP3
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Single Progress & Preview Player -->
+            <div id="single-progress-box" class="progress-box hidden">
+              <div class="progress-bar-bg">
+                <div id="single-progress-fill" class="progress-fill" style="width: 0%;"></div>
+              </div>
+              <div class="progress-status">
+                <span id="single-status-text">Iniciando conversão...</span>
+                <span id="single-status-percent">0%</span>
+              </div>
+            </div>
+
+            <div id="single-download-result" class="download-result-box hidden">
+              <div class="success-banner">
+                <i class="fa-solid fa-circle-check"></i> MP3 Convertido e Etiquetado com Sucesso!
+              </div>
+              <div class="player-wrapper">
+                <canvas id="audio-visualizer" height="60"></canvas>
+                <audio id="audio-preview" controls></audio>
+              </div>
+              <a id="single-download-link" href="#" download class="btn btn-success btn-large">
+                <i class="fa-solid fa-file-arrow-down"></i> Salvar Arquivo MP3
+              </a>
+            </div>
+          </div>
+
+          <!-- Playlist View -->
+          <div id="playlist-view" class="view-panel hidden">
+            <div class="playlist-header-card">
+              <div class="playlist-info">
+                <h2 id="playlist-title-display">Título da Playlist</h2>
+                <p id="playlist-meta-display"><i class="fa-solid fa-layer-group"></i> 0 Faixas · Carregadas do YouTube
+                </p>
+              </div>
+              <button type="button" id="convert-playlist-btn" class="btn btn-accent btn-large">
+                <i class="fa-solid fa-file-zipper"></i> Baixar Playlist Completa (.ZIP)
+              </button>
+            </div>
+
+            <div id="playlist-progress-box" class="progress-box hidden">
+              <div class="progress-bar-bg">
+                <div id="playlist-progress-fill" class="progress-fill" style="width: 0%;"></div>
+              </div>
+              <div class="progress-status">
+                <span id="playlist-status-text">Convertendo lote de faixas...</span>
+                <span id="playlist-status-percent">0%</span>
+              </div>
+            </div>
+
+            <div id="playlist-download-result" class="download-result-box hidden">
+              <div class="success-banner">
+                <i class="fa-solid fa-circle-check"></i> Playlist Processada e Compactada em ZIP!
+              </div>
+              <a id="playlist-download-link" href="#" download class="btn btn-success btn-large">
+                <i class="fa-solid fa-file-zipper"></i> Baixar Pacote ZIP da Playlist
+              </a>
+            </div>
+
+            <div class="playlist-controls">
+              <label class="checkbox-label">
+                <input type="checkbox" id="select-all-checkbox" checked> Selecionar Todas as Faixas
+              </label>
+              <span id="selected-count-badge" class="badge">0 faixas selecionadas</span>
+            </div>
+
+            <div id="playlist-tracks-list" class="tracks-list">
+              <!-- Playlist items rendered dynamically -->
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+      <!-- Feature Cards (Compact, non-competing) -->
+      <div class="hero-features-grid">
+        <div class="feature-card-compact">
+          <div class="feature-icon-wrapper"><i class="fa-brands fa-android"></i></div>
+          <div class="feature-text">
+            <h4>MediaStore Android</h4>
+            <p>Tags ID3v2.3 com capa APIC embutida para Poweramp, YT Music e Pulsar.</p>
+          </div>
+        </div>
+        <div class="feature-card-compact">
+          <div class="feature-icon-wrapper"><i class="fa-solid fa-list-check"></i></div>
+          <div class="feature-text">
+            <h4>Batch Playlist</h4>
+            <p>Converta lote completo de vídeos em um único arquivo ZIP organizado.</p>
+          </div>
+        </div>
+        <div class="feature-card-compact">
+          <div class="feature-icon-wrapper"><i class="fa-solid fa-sliders"></i></div>
+          <div class="feature-text">
+            <h4>Edição de Metadados</h4>
+            <p>Ajuste nome de artista, título e ano antes de salvar o áudio.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- SECTION 2: EDITORIAL ALBUM COVER MURAL GRID -->
+  <section class="full-width-gallery-section">
+    <div class="editorial-full-grid">
+
+      <!-- 1. Rick Astley - Never Gonna Give You Up (1987) -->
+      <article class="album-tile" data-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        data-title="Whenever You Need Somebody" data-track="Never Gonna Give You Up" data-artist="Rick Astley"
+        data-year="1987">
+        <img src="images/rick_astley.jpg" alt="Rick Astley - Never Gonna Give You Up" loading="lazy"
+          class="album-cover-img">
+        <div class="album-overlay">
+          <span class="album-year">1987</span>
+          <h3 class="album-title">Never Gonna Give You Up</h3>
+          <span class="album-artist">Rick Astley</span>
+          <button type="button" class="album-action-btn">
+            <i class="fa-solid fa-download"></i> Converter Música
+          </button>
+        </div>
+      </article>
+
+      <!-- 2. João Gomes - Lenda (2022) -->
+      <article class="album-tile" data-url="https://www.youtube.com/watch?v=pMrwNpINwJM" data-title="Digo Ou Não Digo"
+        data-track="Lenda" data-artist="João Gomes" data-year="2022">
+        <img src="images/joao_gomes.jpg" alt="João Gomes - Lenda" loading="lazy" class="album-cover-img">
+        <div class="album-overlay">
+          <span class="album-year">2022</span>
+          <h3 class="album-title">Lenda</h3>
+          <span class="album-artist">João Gomes</span>
+          <button type="button" class="album-action-btn">
+            <i class="fa-solid fa-download"></i> Converter Música
+          </button>
+        </div>
+      </article>
+
+      <!-- 3. Rita Lee - Papai, Me Empresta o Carro (1979) -->
+      <article class="album-tile" data-url="https://www.youtube.com/watch?v=75M8GOdIa8o" data-title="Rita Lee (1979)"
+        data-track="Papai, Me Empresta o Carro" data-artist="Rita Lee" data-year="1979">
+        <img src="images/rita_lee.jpg" alt="Rita Lee - Papai, Me Empresta o Carro" loading="lazy"
+          class="album-cover-img">
+        <div class="album-overlay">
+          <span class="album-year">1979</span>
+          <h3 class="album-title">Papai, Me Empresta o Carro</h3>
+          <span class="album-artist">Rita Lee</span>
+          <button type="button" class="album-action-btn">
+            <i class="fa-solid fa-download"></i> Converter Música
+          </button>
+        </div>
+      </article>
+
+      <!-- 4. Matanza - Maldito Hippie Sujo (2003) -->
+      <article class="album-tile" data-url="https://www.youtube.com/watch?v=c9k_7hFUpzg"
+        data-title="Música para Beber e Brigar" data-track="Maldito Hippie Sujo" data-artist="Matanza" data-year="2003">
+        <img src="images/matanza.jpg" alt="Matanza - Maldito Hippie Sujo" loading="lazy" class="album-cover-img">
+        <div class="album-overlay">
+          <span class="album-year">2003</span>
+          <h3 class="album-title">Maldito Hippie Sujo</h3>
+          <span class="album-artist">Matanza</span>
+          <button type="button" class="album-action-btn">
+            <i class="fa-solid fa-download"></i> Converter Música
+          </button>
+        </div>
+      </article>
+
+      <!-- 5. The Beatles - Eleanor Rigby (1966) -->
+      <article class="album-tile" data-url="https://www.youtube.com/watch?v=HuS5NuXRb5Y" data-title="Revolver"
+        data-track="Eleanor Rigby" data-artist="The Beatles" data-year="1966">
+        <img src="images/beatles_revolver.jpg" alt="The Beatles - Eleanor Rigby" loading="lazy" class="album-cover-img">
+        <div class="album-overlay">
+          <span class="album-year">1966</span>
+          <h3 class="album-title">Eleanor Rigby</h3>
+          <span class="album-artist">The Beatles</span>
+          <button type="button" class="album-action-btn">
+            <i class="fa-solid fa-download"></i> Converter Música
+          </button>
+        </div>
+      </article>
+
+      <!-- 6. Queen - Bohemian Rhapsody (1975) -->
+      <article class="album-tile" data-url="https://www.youtube.com/watch?v=fJ9rUzIMcZQ"
+        data-title="A Night at the Opera" data-track="Bohemian Rhapsody" data-artist="Queen" data-year="1975">
+        <img src="images/queen_opera.jpg" alt="Queen - Bohemian Rhapsody" loading="lazy" class="album-cover-img">
+        <div class="album-overlay">
+          <span class="album-year">1975</span>
+          <h3 class="album-title">Bohemian Rhapsody</h3>
+          <span class="album-artist">Queen</span>
+          <button type="button" class="album-action-btn">
+            <i class="fa-solid fa-download"></i> Converter Música
+          </button>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-content">
+      <p class="copyright">SonicSync © 2026 · Antonio Lúcio de Oliveira</p>
+      <div class="social-links">
+        <a href="https://www.linkedin.com/in/antonioluciodeoliveira/" target="_blank" rel="noopener noreferrer" class="social-link" title="LinkedIn">
+          <i class="fa-brands fa-linkedin"></i>
+        </a>
+        <a href="https://github.com/Quinito75" target="_blank" rel="noopener noreferrer" class="social-link" title="GitHub">
+          <i class="fa-brands fa-github"></i>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

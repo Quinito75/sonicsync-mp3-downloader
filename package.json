@@ -1,0 +1,20 @@
+{
+  "name": "sonicsync",
+  "version": "1.0.0",
+  "description": "Conversor YouTube para MP3 de Alta Fidelidade com Metadados ID3v2.3 & Capas Embutidas para Android",
+  "main": "server.js",
+  "author": "Antonio Lúcio de Oliveira (https://github.com/Quinito75)",
+  "license": "MIT",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "axios": "^1.8.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "node-id3": "^0.2.6"
+  }
+}
