@@ -58,8 +58,8 @@ function getYtDlpJson(targetUrl) {
       '--dump-single-json',
       '--flat-playlist',
       '--js-runtimes', 'node',
-      '--extractor-args', 'youtube:player_client=mweb,tv_embedded,android',
-      '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      '--extractor-args', 'youtube:player_client=ios,android,mweb',
+      '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
       targetUrl
     ];
     execFile(getYtDlpExecutable(), args, { maxBuffer: 1024 * 1024 * 50 }, (error, stdout, stderr) => {
@@ -72,6 +72,58 @@ function getYtDlpJson(targetUrl) {
       } catch (e) {
         reject('Erro ao interpretar dados do YouTube: ' + e.message);
       }
+    });
+  });
+}
+
+// Fallback: Cobalt API Audio Extraction (For Cloud Datacenter IPs blocked by YouTube)
+async function downloadAudioViaCobalt(videoUrl, targetMp3Path) {
+  const cobaltInstances = [
+    'https://api.cobalt.tools/',
+    'https://co.wuk.sh/api/json',
+    'https://cobalt.api.scrapp.endless.pizza/'
+  ];
+
+  let audioDownloadUrl = null;
+
+  for (const instanceUrl of cobaltInstances) {
+    try {
+      const response = await axios.post(instanceUrl, {
+        url: videoUrl,
+        downloadMode: 'audio',
+        audioFormat: 'mp3',
+        audioBitrate: '320'
+      }, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15'
+        },
+        timeout: 15000
+      });
+
+      if (response.data && response.data.url) {
+        audioDownloadUrl = response.data.url;
+        break;
+      }
+    } catch (e) {
+      console.warn(`⚠️ Instância Cobalt ${instanceUrl} falhou:`, e.message);
+    }
+  }
+
+  if (!audioDownloadUrl) {
+    throw new Error('Não foi possível extrair o áudio. O YouTube e os serviços de extração estão bloqueando este vídeo temporariamente.');
+  }
+
+  const writer = fs.createWriteStream(targetMp3Path);
+  const audioStream = await axios.get(audioDownloadUrl, { responseType: 'stream', timeout: 30000 });
+  audioStream.data.pipe(writer);
+
+  return new Promise((resolve, reject) => {
+    writer.on('finish', () => resolve(targetMp3Path));
+    writer.on('error', (err) => {
+      fs.unlink(targetMp3Path, () => {});
+      reject(err);
     });
   });
 }
@@ -223,30 +275,44 @@ function convertAndTagTrack({ videoUrl, fileId, title, artist, album, year, genr
       '--audio-quality', audioQuality,
       '--no-playlist',
       '--js-runtimes', 'node',
-      '--extractor-args', 'youtube:player_client=mweb,tv_embedded,android',
-      '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      '--extractor-args', 'youtube:player_client=ios,android,mweb',
+      '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+      '--referer', 'https://www.youtube.com/',
       '-o', outTemplate,
       videoUrl
     ];
 
     execFile(getYtDlpExecutable(), args, async (error, stdout, stderr) => {
-      if (error) {
-        return reject('Erro na conversão do áudio: ' + (stderr || error.message));
+      let downloadSuccess = false;
+
+      if (!error) {
+        const expectedPath = path.join(TEMP_DIR, `${rawOutName}.mp3`);
+        let actualMp3Path = expectedPath;
+        if (!fs.existsSync(expectedPath)) {
+          const files = fs.readdirSync(TEMP_DIR);
+          const match = files.find(f => f.startsWith(rawOutName));
+          if (match) actualMp3Path = path.join(TEMP_DIR, match);
+        }
+        if (fs.existsSync(actualMp3Path)) {
+          try {
+            fs.renameSync(actualMp3Path, mp3Path);
+            downloadSuccess = true;
+          } catch (e) {
+            downloadSuccess = false;
+          }
+        }
       }
 
-      // Find converted file
-      const expectedPath = path.join(TEMP_DIR, `${rawOutName}.mp3`);
-      let actualMp3Path = expectedPath;
-      if (!fs.existsSync(expectedPath)) {
-        // Fallback search
-        const files = fs.readdirSync(TEMP_DIR);
-        const match = files.find(f => f.startsWith(rawOutName));
-        if (match) actualMp3Path = path.join(TEMP_DIR, match);
-        else return reject('Arquivo MP3 de saída não encontrado');
+      // Fallback: If yt-dlp failed due to 429/bot check on cloud host, try Cobalt API
+      if (!downloadSuccess) {
+        console.warn('⚠️ yt-dlp falhou na conversão no servidor, ativando fallback de extração de áudio:', stderr || error);
+        try {
+          await downloadAudioViaCobalt(videoUrl, mp3Path);
+          downloadSuccess = true;
+        } catch (cobaltErr) {
+          return reject('Erro na conversão do áudio: ' + (stderr || cobaltErr.message));
+        }
       }
-
-      // Rename to final path
-      fs.renameSync(actualMp3Path, mp3Path);
 
       // Fetch cover art
       let imageBuffer = null;
