@@ -243,6 +243,19 @@ document.addEventListener('DOMContentLoaded', () => {
     errorAlert.classList.add('hidden');
   }
 
+  // Helper for safe API JSON response parsing
+  async function parseJsonResponse(res, defaultErrorMsg) {
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      throw new Error('Servidor backend Node.js inacessível. O servidor devolveu HTML (404/500). Verifique se o server.js está em execução no backend.');
+    }
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      throw new Error(data.error || defaultErrorMsg);
+    }
+    return data;
+  }
+
   // Analyze YouTube URL
   async function analyzeUrl() {
     const url = urlInput.value.trim();
@@ -265,11 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const res = await fetch(`/api/info?url=${encodeURIComponent(url)}`);
-      const data = await res.json();
-
-      if (!res.ok || data.error) {
-        throw new Error(data.error || 'Falha ao analisar URL');
-      }
+      const data = await parseJsonResponse(res, 'Falha ao analisar URL');
 
       currentData = data;
       loader.classList.add('hidden');
@@ -394,12 +403,8 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify(payload)
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res, 'Erro durante a conversão.');
       clearInterval(interval);
-
-      if (!res.ok || data.error) {
-        throw new Error(data.error || 'Erro durante a conversão.');
-      }
 
       singleProgressFill.style.width = '100%';
       singleStatusPercent.textContent = '100%';
