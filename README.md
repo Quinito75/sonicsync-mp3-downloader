@@ -63,17 +63,16 @@
 
 ```
 sonicsync/
-├── public/
-│   ├── images/              # Capas de álbuns de alta resolução
-│   │   ├── rick_astley.jpg
-│   │   ├── joao_gomes.jpg
-│   │   ├── rita_lee.jpg
-│   │   ├── matanza.jpg
-│   │   ├── beatles_revolver.jpg
-│   │   └── queen_opera.jpg
-│   ├── index.html           # Interface principal da aplicação
-│   ├── style.css            # Sistema de design CSS3 Vanilla
-│   └── app.js               # Lógica do frontend & interações
+├── images/                  # Capas de álbuns de alta resolução
+│   ├── rick_astley.jpg
+│   ├── joao_gomes.jpg
+│   ├── rita_lee.jpg
+│   ├── matanza.jpg
+│   ├── beatles_revolver.jpg
+│   └── queen_opera.jpg
+├── index.html               # Interface principal da aplicação
+├── style.css                # Sistema de design CSS3 Vanilla
+├── app.js                   # Lógica do frontend & interações
 ├── fetch_real_covers.js     # Script auxiliar de consulta iTunes API
 ├── server.js                # Servidor Node.js / Express & APIs
 ├── package.json             # Metadados e dependências do projeto

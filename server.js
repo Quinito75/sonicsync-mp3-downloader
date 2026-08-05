@@ -17,8 +17,12 @@ if (!fs.existsSync(TEMP_DIR)) {
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname));
 app.use('/downloads', express.static(TEMP_DIR));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // Auto-cleanup temp files older than 30 minutes
 setInterval(() => {

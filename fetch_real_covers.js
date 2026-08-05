@@ -78,7 +78,7 @@ function downloadFile(url, destPath) {
 }
 
 async function run() {
-  const imagesDir = path.join(__dirname, 'public', 'images');
+  const imagesDir = path.join(__dirname, 'images');
   if (!fs.existsSync(imagesDir)) {
     fs.mkdirSync(imagesDir, { recursive: true });
   }
