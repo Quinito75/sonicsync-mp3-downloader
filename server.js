@@ -112,11 +112,64 @@ async function downloadAudioViaCobalt(videoUrl, targetMp3Path) {
   }
 
   if (!audioDownloadUrl) {
-    throw new Error('Não foi possível extrair o áudio. O YouTube e os serviços de extração estão bloqueando este vídeo temporariamente.');
+    throw new Error('Serviço Cobalt indisponível.');
   }
 
   const writer = fs.createWriteStream(targetMp3Path);
   const audioStream = await axios.get(audioDownloadUrl, { responseType: 'stream', timeout: 30000 });
+  audioStream.data.pipe(writer);
+
+  return new Promise((resolve, reject) => {
+    writer.on('finish', () => resolve(targetMp3Path));
+    writer.on('error', (err) => {
+      fs.unlink(targetMp3Path, () => {});
+      reject(err);
+    });
+  });
+}
+
+// Fallback Layer 3: Piped API Proxy (For Cloud Datacenter IPs)
+async function downloadAudioViaPiped(videoUrl, targetMp3Path) {
+  const match = videoUrl.match(/(?:v=|\/embed\/|\/1\/|\/v\/|https:\/\/youtu\.be\/|\/shorts\/)([^#&?]*)/);
+  const videoId = match ? match[1] : null;
+
+  if (!videoId) {
+    throw new Error('ID do vídeo inválido para extração via Piped.');
+  }
+
+  const pipedInstances = [
+    'https://api.piped.video',
+    'https://pipedapi.kavin.rocks',
+    'https://pa.mha.fi',
+    'https://pipedapi.mha.fi',
+    'https://api.piped.privacydev.net'
+  ];
+
+  let audioStreamUrl = null;
+
+  for (const baseUrl of pipedInstances) {
+    try {
+      const res = await axios.get(`${baseUrl}/streams/${videoId}`, {
+        timeout: 10000,
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+
+      if (res.data && Array.isArray(res.data.audioStreams) && res.data.audioStreams.length > 0) {
+        const streams = res.data.audioStreams.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
+        audioStreamUrl = streams[0].url;
+        if (audioStreamUrl) break;
+      }
+    } catch (e) {
+      console.warn(`⚠️ Instância Piped ${baseUrl} falhou:`, e.message);
+    }
+  }
+
+  if (!audioStreamUrl) {
+    throw new Error('Não foi possível extrair o áudio. O YouTube e as redes proxy estão temporariamente limitando este vídeo na nuvem.');
+  }
+
+  const writer = fs.createWriteStream(targetMp3Path);
+  const audioStream = await axios.get(audioStreamUrl, { responseType: 'stream', timeout: 30000 });
   audioStream.data.pipe(writer);
 
   return new Promise((resolve, reject) => {
@@ -303,14 +356,20 @@ function convertAndTagTrack({ videoUrl, fileId, title, artist, album, year, genr
         }
       }
 
-      // Fallback: If yt-dlp failed due to 429/bot check on cloud host, try Cobalt API
+      // Fallback: If yt-dlp failed due to 429/bot check on cloud host, try Cobalt API & Piped API
       if (!downloadSuccess) {
-        console.warn('⚠️ yt-dlp falhou na conversão no servidor, ativando fallback de extração de áudio:', stderr || error);
+        console.warn('⚠️ yt-dlp falhou na conversão no servidor, ativando fallback Cobalt API:', stderr || error);
         try {
           await downloadAudioViaCobalt(videoUrl, mp3Path);
           downloadSuccess = true;
         } catch (cobaltErr) {
-          return reject('Erro na conversão do áudio: ' + (stderr || cobaltErr.message));
+          console.warn('⚠️ Cobalt API falhou, ativando fallback Piped API:', cobaltErr.message);
+          try {
+            await downloadAudioViaPiped(videoUrl, mp3Path);
+            downloadSuccess = true;
+          } catch (pipedErr) {
+            return reject('Erro na conversão do áudio: ' + (pipedErr.message || stderr));
+          }
         }
       }
 
