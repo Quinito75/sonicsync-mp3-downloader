@@ -4,6 +4,12 @@
 
 ---
 
+## 📸 Demonstração da Interface
+
+![SonicSync Web Interface](./images/screencapture.png)
+
+---
+
 ## ⚡ Destaques & Funcionalidades
 
 - 🎵 **Conversão de Alta Fidelidade:** Extração direta de áudio em até 320 kbps.
@@ -63,7 +69,8 @@
 
 ```
 sonicsync/
-├── images/                  # Capas de álbuns de alta resolução
+├── images/                  # Capas de álbuns & screenshot da interface
+│   ├── screencapture.png    # Preview do site para o GitHub
 │   ├── rick_astley.jpg
 │   ├── joao_gomes.jpg
 │   ├── rita_lee.jpg
