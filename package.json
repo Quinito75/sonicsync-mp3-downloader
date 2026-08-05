@@ -7,7 +7,8 @@
   "license": "MIT",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "postinstall": "node install_ytdlp.js"
   },
   "dependencies": {
     "archiver": "^7.0.1",

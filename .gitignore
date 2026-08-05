@@ -4,6 +4,8 @@ node_modules/
 # Production builds & Temporary storage
 temp/
 downloads/
+yt-dlp
+yt-dlp.exe
 *.log
 
 # Environment & Config

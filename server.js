@@ -40,6 +40,17 @@ setInterval(() => {
   });
 }, 10 * 60 * 1000);
 
+// Helper: Resolve yt-dlp binary path (Local downloaded binary or system PATH)
+function getYtDlpExecutable() {
+  const isWin = process.platform === 'win32';
+  const binaryName = isWin ? 'yt-dlp.exe' : 'yt-dlp';
+  const localPath = path.join(__dirname, binaryName);
+  if (fs.existsSync(localPath)) {
+    return localPath;
+  }
+  return 'yt-dlp';
+}
+
 // Helper: Run yt-dlp to extract JSON metadata
 function getYtDlpJson(targetUrl) {
   return new Promise((resolve, reject) => {
@@ -50,7 +61,7 @@ function getYtDlpJson(targetUrl) {
       '--extractor-args', 'youtube:player_client=android,mweb,web',
       targetUrl
     ];
-    execFile('yt-dlp', args, { maxBuffer: 1024 * 1024 * 50 }, (error, stdout, stderr) => {
+    execFile(getYtDlpExecutable(), args, { maxBuffer: 1024 * 1024 * 50 }, (error, stdout, stderr) => {
       if (error) {
         return reject(error.message || stderr);
       }
@@ -178,7 +189,7 @@ function convertAndTagTrack({ videoUrl, fileId, title, artist, album, year, genr
       videoUrl
     ];
 
-    execFile('yt-dlp', args, async (error, stdout, stderr) => {
+    execFile(getYtDlpExecutable(), args, async (error, stdout, stderr) => {
       if (error) {
         return reject('Erro na conversão do áudio: ' + (stderr || error.message));
       }
