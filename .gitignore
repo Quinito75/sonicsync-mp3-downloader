@@ -6,6 +6,7 @@ temp/
 downloads/
 yt-dlp
 yt-dlp.exe
+TECHNICAL_CASE.md
 *.log
 
 # Environment & Config
