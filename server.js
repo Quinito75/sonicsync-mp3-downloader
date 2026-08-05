@@ -58,7 +58,8 @@ function getYtDlpJson(targetUrl) {
       '--dump-single-json',
       '--flat-playlist',
       '--js-runtimes', 'node',
-      '--extractor-args', 'youtube:player_client=android,mweb,web',
+      '--extractor-args', 'youtube:player_client=mweb,tv_embedded,android',
+      '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
       targetUrl
     ];
     execFile(getYtDlpExecutable(), args, { maxBuffer: 1024 * 1024 * 50 }, (error, stdout, stderr) => {
@@ -75,6 +76,38 @@ function getYtDlpJson(targetUrl) {
   });
 }
 
+// Fallback: YouTube oEmbed API (Never blocked by 429 on Datacenter IPs)
+async function getOembedJson(targetUrl) {
+  const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(targetUrl)}&format=json`;
+  const response = await axios.get(oembedUrl, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+  const data = response.data;
+  
+  const match = targetUrl.match(/(?:v=|\/embed\/|\/1\/|\/v\/|https:\/\/youtu\.be\/|\/shorts\/)([^#&?]*)/);
+  const videoId = match ? match[1] : 'video_' + Date.now();
+
+  const titleParts = (data.title || 'Música').split(' - ');
+  let artist = data.author_name || 'Artista Desconhecido';
+  let title = data.title;
+
+  if (titleParts.length > 1) {
+    artist = titleParts[0].trim();
+    title = titleParts.slice(1).join(' - ').trim();
+  }
+
+  return {
+    isPlaylist: false,
+    id: videoId,
+    url: targetUrl,
+    title: title,
+    artist: artist,
+    album: 'YouTube MP3',
+    year: new Date().getFullYear().toString(),
+    genre: 'Music',
+    duration: 0,
+    thumbnail: data.thumbnail_url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
+  };
+}
+
 // API: Fetch Metadata (Single Video or Playlist)
 app.get('/api/info', async (req, res) => {
   const { url } = req.query;
@@ -83,7 +116,13 @@ app.get('/api/info', async (req, res) => {
   }
 
   try {
-    const data = await getYtDlpJson(url);
+    let data;
+    try {
+      data = await getYtDlpJson(url);
+    } catch (primaryErr) {
+      console.warn('⚠️ yt-dlp info falhou, tentando fallback oEmbed:', primaryErr);
+      data = await getOembedJson(url);
+    }
     const isPlaylist = data._type === 'playlist' || (Array.isArray(data.entries) && data.entries.length > 0);
 
     if (isPlaylist) {
@@ -184,7 +223,8 @@ function convertAndTagTrack({ videoUrl, fileId, title, artist, album, year, genr
       '--audio-quality', audioQuality,
       '--no-playlist',
       '--js-runtimes', 'node',
-      '--extractor-args', 'youtube:player_client=android,mweb,web',
+      '--extractor-args', 'youtube:player_client=mweb,tv_embedded,android',
+      '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
       '-o', outTemplate,
       videoUrl
     ];
